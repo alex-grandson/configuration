@@ -1,0 +1,76 @@
+---
+- name: Утановка Docker
+  become: true
+  block:
+    - name: Add ubuntu universe repository
+      apt_repository:
+        repo: "deb http://us.archive.ubuntu.com/ubuntu/ {{ ansible_distribution_release }} universe"
+        state: present
+
+    - name: Install additional software
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3-pip
+        update-cache: true
+        cache_valid_time: 86400
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: "{{ docker_apt_gpg_key }}"
+        state: present
+        keyring: /usr/share/keyrings/docker-archive-keyring.gpg
+
+    - name: Add Docker stable repo
+      apt_repository:
+        repo: >
+          deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
+          {{ docker_apt_repository }}
+        state: present
+        update-cache: true
+        filename: docker
+
+    - name: Install Docker-ce
+      apt:
+        name: docker-ce
+        update-cache: true
+
+    - name: Check if Docker is installed
+      service:
+        name: docker
+        state: restarted
+        enabled: true
+
+- name: Install Docker-compose
+  become: true
+  block:
+    - name: Gathering Docker-compose version
+      uri:
+        url: https://api.github.com/repos/docker/compose/releases/latest
+        body_format: json
+      register: page
+
+    - name: Installation Docker-compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ page.json.tag_name }}/docker-compose-Linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: 0755
+
+- name: Set up additional python packages
+  block:
+    - name: Using pip install docker
+      pip:
+        name: docker
+
+- name: Ending installation
+  block:
+    - name: Add user to docker group
+      become: true
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true

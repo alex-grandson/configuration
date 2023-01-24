@@ -1,0 +1,100 @@
+---
+- name: Install zsh shell packages on debian based distro
+  apt:
+    name: zsh
+    state: latest
+  become: true
+  when: ansible_os_family == 'Debian'
+
+- name: Install zsh shell packages on redhat based distro
+  yum:
+    name: zsh
+    state: latest
+  become: true
+  when: ansible_os_family == 'RedHat'
+
+- name: Make sure git package is installed on debian based distro
+  apt:
+    name: git
+    state: present
+  become: true
+  when: ansible_os_family == 'Debian'
+
+- name: Make sure git package is installed on redhat based distro
+  yum:
+    name: git
+    state: present
+  become: true
+  when: ansible_os_family == 'RedHat'
+
+- name: Clone oh-my-zsh git repository to user's home folder
+  git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: /home/{{ item }}/.oh-my-zsh
+  with_items: "{{ omz_users }}"
+
+- name: Clone oh-my-zsh git repository to root home folder
+  git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: /root/.oh-my-zsh
+  become: true
+  when: omz_root
+
+- name: Clone zsh-autosuggestions plugin git repo
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dest: /home/{{ item }}/.oh-my-zsh/plugins/zsh-autosuggestions
+  with_items: "{{ omz_users }}"
+
+- name: Clone zsh-autosuggestions plugin git repo for root
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dest: /root/.oh-my-zsh/plugins/zsh-autosuggestions
+  become: true
+  when: omz_root
+
+- name: Copy .zshrc template to user's home folder
+  template:
+    src: zshrc.j2
+    dest: /home/{{ item }}/.zshrc
+    backup: true
+  with_items: "{{ omz_users }}"
+
+- name: Copy .zshrc template to root home folder
+  template:
+    src: zshrc.j2
+    dest: /root/.zshrc
+    backup: true
+  become: true
+  when: omz_root
+
+- name: Setup user permissions for .oh-my-zsh dir
+  file:
+    path: /home/{{ item }}/.oh-my-zsh
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0755
+  with_items: "{{ omz_users }}"
+
+- name: Setup user permissions for .zshrc file
+  file:
+    path: /home/{{ item }}/.zshrc
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0640
+  with_items: "{{ omz_users }}"
+
+- name: Change default shell to zsh for users
+  user:
+    name: "{{ item }}"
+    shell: "{{ omz_zsh_path }}"
+  with_items: "{{ omz_users }}"
+  become: true
+  when: omz_chsh
+
+- name: Change default shell to zsh for root
+  user:
+    name: root
+    shell: "{{ omz_zsh_path }}"
+  become: true
+  when: omz_chsh and omz_root

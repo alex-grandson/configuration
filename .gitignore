@@ -1,0 +1,7 @@
+**/.DS_store
+*.box
+
+.vagrant/
+.vscode/
+.fleet/
+.idea/

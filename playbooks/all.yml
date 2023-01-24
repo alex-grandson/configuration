@@ -1,0 +1,7 @@
+---
+- name: All configs
+  hosts: cluster
+  roles:
+    # - gsvitins.omz
+    - essential
+    - tools

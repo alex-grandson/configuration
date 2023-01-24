@@ -1,0 +1,18 @@
+packages:
+  - vim
+  - htop
+  - neofetch
+  - tmux
+  - speedtest-cli
+
+username: vagrant
+
+password: itmo
+
+shell: /bin/zsh
+
+ssh_port: 22
+
+docker_apt_gpg_key: "https://download.docker.com/linux/ubuntu/gpg"
+
+docker_apt_repository: "https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
